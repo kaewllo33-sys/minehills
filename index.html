@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mine Hills Pool Villa — ระบบจองที่พัก</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sarabun', sans-serif; background: #f7f5f0; color: #2c2c2a; min-height: 100vh; }
+
+  .header { background: #fff; border-bottom: 1px solid #e8e6e0; padding: 1rem 2rem; display: flex; align-items: center; gap: 12px; }
+  .logo-icon { font-size: 28px; }
+  .logo-text { font-size: 20px; font-weight: 600; color: #2c2c2a; }
+  .logo-text span { color: #1a7a5e; }
+  .tagline { font-size: 12px; color: #888; margin-top: 1px; }
+
+  .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+
+  .card { background: #fff; border-radius: 16px; border: 1px solid #e8e6e0; overflow: hidden; }
+
+  .layout { display: grid; grid-template-columns: 230px 1fr; min-height: 540px; }
+
+  .sidebar { border-right: 1px solid #e8e6e0; padding: 1.25rem 1rem; overflow-y: auto; background: #faf9f7; }
+  .sidebar-title { font-size: 10px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; padding: 0 4px; }
+
+  .room-item { padding: 9px 12px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; margin-bottom: 4px; transition: all 0.12s; }
+  .room-item:hover { background: #f0f0ec; }
+  .room-item.active { background: #e8f5f0; border-color: #a8d8c8; }
+  .room-name { font-size: 13px; color: #2c2c2a; font-weight: 400; line-height: 1.3; }
+  .room-item.active .room-name { color: #0f6e56; font-weight: 500; }
+  .room-badge { font-size: 10px; color: #aaa; margin-top: 2px; }
+  .room-item.active .room-badge { color: #5dcaa5; }
+
+  .content { display: flex; flex-direction: column; }
+
+  .cal-header { padding: 1rem 1.5rem 0.75rem; border-bottom: 1px solid #e8e6e0; display: flex; align-items: center; gap: 12px; }
+  .cal-room-name { font-size: 15px; font-weight: 600; color: #2c2c2a; flex: 1; }
+  .month-nav { display: flex; align-items: center; gap: 8px; }
+  .nav-btn { background: none; border: 1px solid #e0ddd8; border-radius: 8px; width: 30px; height: 30px; cursor: pointer; color: #666; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background 0.1s; }
+  .nav-btn:hover { background: #f0f0ec; }
+  .month-label { font-size: 13px; color: #555; min-width: 120px; text-align: center; font-weight: 500; }
+
+  .cal-body { padding: 1.25rem 1.5rem; flex: 1; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .day-lbl { text-align: center; font-size: 11px; color: #aaa; padding: 4px 0 8px; font-weight: 500; }
+  .day-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all 0.1s; }
+  .day-cell:hover:not(.booked):not(.empty):not(.past) { border-color: #a8d8c8; background: #e8f5f0; }
+  .day-cell.empty, .day-cell.past { cursor: default; opacity: 0.25; }
+  .day-cell.today .dnum { color: #1a7a5e; font-weight: 600; }
+  .day-cell.booked { background: #fdf0eb; cursor: not-allowed; }
+  .day-cell.booked .dnum { color: #c0693a; }
+  .day-cell.selected { background: #e8f5f0; border-color: #1a7a5e; }
+  .day-cell.selected .dnum { color: #0f6e56; font-weight: 600; }
+  .day-cell.in-range { background: #f0faf6; }
+  .day-cell.in-range .dnum { color: #1a7a5e; }
+  .dnum { font-size: 13px; color: #2c2c2a; }
+  .ddot { width: 4px; height: 4px; border-radius: 50%; margin-top: 2px; }
+
+  .legend { display: flex; gap: 1.25rem; margin-top: 1rem; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888; }
+  .ldot { width: 9px; height: 9px; border-radius: 50%; }
+
+  .booking-bar { border-top: 1px solid #e8e6e0; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; background: #faf9f7; }
+  .bdate { font-size: 13px; color: #666; flex: 1; min-width: 200px; }
+  .bdate strong { color: #2c2c2a; }
+  .bnights { font-size: 13px; color: #aaa; }
+  .book-btn { padding: 9px 20px; background: #1a7a5e; color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; font-family: 'Sarabun', sans-serif; transition: background 0.15s; }
+  .book-btn:hover { background: #0f6e56; }
+  .book-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 999; padding: 1rem; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 16px; padding: 1.75rem; width: 100%; max-width: 320px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+  .modal h3 { font-size: 16px; font-weight: 600; color: #2c2c2a; margin-bottom: 1rem; }
+  .modal-info { font-size: 13px; color: #555; background: #f7f5f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 1.25rem; line-height: 2; }
+  .fg { margin-bottom: 12px; }
+  .fl { font-size: 12px; color: #888; margin-bottom: 4px; display: block; }
+  .fi { width: 100%; padding: 9px 12px; border: 1px solid #e0ddd8; border-radius: 10px; background: #faf9f7; color: #2c2c2a; font-size: 13px; font-family: 'Sarabun', sans-serif; transition: border-color 0.1s; }
+  .fi:focus { outline: none; border-color: #1a7a5e; }
+  .mactions { display: flex; gap: 10px; margin-top: 1rem; }
+  .mbtn { flex: 1; padding: 10px; border-radius: 10px; font-size: 13px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-weight: 500; transition: all 0.12s; }
+  .mbtn.cancel { background: none; border: 1px solid #e0ddd8; color: #666; }
+  .mbtn.cancel:hover { background: #f7f5f0; }
+  .mbtn.confirm { background: #1a7a5e; color: #fff; border: none; }
+  .mbtn.confirm:hover { background: #0f6e56; }
+
+  .success { text-align: center; padding: 0.5rem 0; display: none; }
+  .sicon { font-size: 48px; }
+  .stxt { font-size: 16px; font-weight: 600; color: #2c2c2a; margin-top: 8px; }
+  .ssub { font-size: 13px; color: #888; margin-top: 6px; line-height: 1.8; }
+
+  .footer { text-align: center; margin-top: 1.5rem; margin-bottom: 2rem; font-size: 12px; color: #bbb; }
+
+  @media (max-width: 640px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid #e8e6e0; max-height: 180px; }
+    .header { padding: 1rem; }
+    .container { margin: 1rem auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-icon">🏔️</div>
+  <div>
+    <div class="logo-text"><span>Mine Hills</span> Pool Villa</div>
+    <div class="tagline">เลือกที่พัก · เลือกวัน · จองง่ายในไม่กี่คลิก</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="layout">
+      <div class="sidebar">
+        <div class="sidebar-title">ที่พักทั้งหมด</div>
+        <div id="room-list"></div>
+      </div>
+      <div class="content">
+        <div class="cal-header">
+          <div class="cal-room-name" id="cal-room-name">—</div>
+          <div class="month-nav">
+            <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+            <div class="month-label" id="month-label"></div>
+            <button class="nav-btn" onclick="changeMonth(1)">›</button>
+          </div>
+        </div>
+        <div class="cal-body">
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="legend">
+            <div class="leg"><div class="ldot" style="background:#1D9E75"></div>ว่าง</div>
+            <div class="leg"><div class="ldot" style="background:#D85A30"></div>ไม่ว่าง</div>
+            <div class="leg"><div class="ldot" style="background:#1a7a5e"></div>เลือกแล้ว</div>
+          </div>
+        </div>
+        <div class="booking-bar">
+          <div class="bdate" id="bdate-info">เลือกวันเช็คอิน จากนั้นเลือกวันเช็คเอาท์</div>
+          <div class="bnights" id="bnights"></div>
+          <button class="book-btn" id="book-btn" disabled onclick="openModal()">📅 จองเลย</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Mine Hills Pool Villa · ระบบจองออนไลน์</div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div id="fc">
+      <h3>ข้อมูลผู้จอง</h3>
+      <div class="modal-info" id="modal-info"></div>
+      <div class="fg"><label class="fl">ชื่อ-นามสกุล</label><input class="fi" id="gname" placeholder="เช่น สมชาย ใจดี"></div>
+      <div class="fg"><label class="fl">เบอร์โทรศัพท์</label><input class="fi" id="gtel" type="tel" placeholder="0812345678"></div>
+      <div class="fg"><label class="fl">หมายเหตุ (ถ้ามี)</label><input class="fi" id="gnote" placeholder="ต้องการอะไรเพิ่มเติม"></div>
+      <div class="mactions">
+        <button class="mbtn cancel" onclick="closeModal()">ยกเลิก</button>
+        <button class="mbtn confirm" onclick="confirmBook()">ยืนยันการจอง</button>
+      </div>
+    </div>
+    <div class="success" id="succ">
+      <div class="sicon">✅</div>
+      <div class="stxt">จองสำเร็จ!</div>
+      <div class="ssub" id="succ-detail"></div>
+      <button class="mbtn confirm" style="margin-top:16px;width:100%" onclick="closeModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const DAYS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+
+const rooms = [
+  { name: 'บ้านพูลวิลล่า', type: 'วิลล่า' },
+  { name: 'บ้าน Jacuzzi', type: 'วิลล่า' },
+  { name: 'รถบ้านครีม โซน1 คันที่1', type: 'รถบ้าน' },
+  { name: 'รถบ้านครีม โซน1 คันที่2', type: 'รถบ้าน' },
+  { name: 'บ้าน View Hills หลังที่ 1', type: 'วิลล่า' },
+  { name: 'บ้าน View Hills หลังที่ 2', type: 'วิลล่า' },
+  { name: 'บ้านมูจิ', type: 'บ้านพัก' },
+  { name: 'บ้านไวท์เฮ้าส์', type: 'บ้านพัก' },
+  { name: 'รถบ้านมิ้น คันที่ 1', type: 'รถบ้าน' },
+  { name: 'รถบ้านมิ้น คันที่ 2', type: 'รถบ้าน' },
+  { name: 'รถบ้านเทา คันที่ 3', type: 'รถบ้าน' },
+  { name: 'รถบ้านเทา คันที่ 4', type: 'รถบ้าน' },
+  { name: 'บ้านโคซี่', type: 'บ้านพัก' },
+];
+
+const today = new Date();
+let viewYear = today.getFullYear(), viewMonth = today.getMonth();
+let selRoom = 0, checkIn = null, checkOut = null, step = 0;
+
+const bookedOffsets = [
+  [3,4,5],[7,8],[],[1,2,3],[10,11,12],[],[5,6,7,8],[2,3],[],[15,16],[4,5],[],[9,10,11]
+];
+
+function isBooked(roomIdx, date) {
+  const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diff = Math.round((new Date(date.getFullYear(), date.getMonth(), date.getDate()) - base) / 86400000);
+  return bookedOffsets[roomIdx] && bookedOffsets[roomIdx].includes(diff);
+}
+
+function isPast(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0,3) + ' ' + (d.getFullYear()+543);
+}
+
+function renderRooms() {
+  const list = document.getElementById('room-list');
+  list.innerHTML = '';
+  rooms.forEach((r, i) => {
+    const el = document.createElement('div');
+    el.className = 'room-item' + (i === selRoom ? ' active' : '');
+    el.innerHTML = '<div class="room-name">' + r.name + '</div><div class="room-badge">' + r.type + '</div>';
+    el.onclick = () => { selRoom = i; checkIn = null; checkOut = null; step = 0; renderRooms(); renderCal(); updateBar(); };
+    list.appendChild(el);
+  });
+}
+
+function renderCal() {
+  document.getElementById('cal-room-name').textContent = rooms[selRoom].name;
+  document.getElementById('month-label').textContent = MONTHS[viewMonth] + ' ' + (viewYear+543);
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  DAYS.forEach(d => { const e = document.createElement('div'); e.className = 'day-lbl'; e.textContent = d; grid.appendChild(e); });
+  const first = new Date(viewYear, viewMonth, 1).getDay();
+  const total = new Date(viewYear, viewMonth+1, 0).getDate();
+  for (let i = 0; i < first; i++) { const e = document.createElement('div'); e.className = 'day-cell empty'; grid.appendChild(e); }
+  for (let d = 1; d <= total; d++) {
+    const date = new Date(viewYear, viewMonth, d);
+    const el = document.createElement('div'); el.className = 'day-cell';
+    const num = document.createElement('div'); num.className = 'dnum'; num.textContent = d; el.appendChild(num);
+    if (isPast(date)) { el.classList.add('past'); }
+    else if (isBooked(selRoom, date)) {
+      el.classList.add('booked');
+      const dot = document.createElement('div'); dot.className = 'ddot'; dot.style.background = '#D85A30'; el.appendChild(dot);
+    } else {
+      const dot = document.createElement('div'); dot.className = 'ddot'; dot.style.background = '#1D9E75'; el.appendChild(dot);
+      if (checkIn && date.toDateString() === checkIn.toDateString()) el.classList.add('selected');
+      if (checkOut && date.toDateString() === checkOut.toDateString()) el.classList.add('selected');
+      if (checkIn && checkOut && date > checkIn && date < checkOut) el.classList.add('in-range');
+      el.onclick = () => pick(date);
+    }
+    if (date.toDateString() === today.toDateString()) el.classList.add('today');
+    grid.appendChild(el);
+  }
+}
+
+function pick(date) {
+  if (step === 0 || (checkIn && date <= checkIn)) { checkIn = date; checkOut = null; step = 1; }
+  else { checkOut = date; step = 0; }
+  updateBar(); renderCal();
+}
+
+function updateBar() {
+  const info = document.getElementById('bdate-info');
+  const nights = document.getElementById('bnights');
+  const btn = document.getElementById('book-btn');
+  if (!checkIn) { info.innerHTML = 'เลือกวันเช็คอิน จากนั้นเลือกวันเช็คเอาท์'; nights.textContent = ''; btn.disabled = true; return; }
+  if (!checkOut) { info.innerHTML = '<strong>เช็คอิน:</strong> ' + fmtDate(checkIn) + ' → เลือกวันเช็คเอาท์'; nights.textContent = ''; btn.disabled = true; return; }
+  const n = Math.round((checkOut - checkIn) / 86400000);
+  info.innerHTML = '<strong>' + fmtDate(checkIn) + '</strong> → <strong>' + fmtDate(checkOut) + '</strong>';
+  nights.textContent = n + ' คืน';
+  btn.disabled = false;
+}
+
+function changeMonth(d) {
+  viewMonth += d;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  renderCal();
+}
+
+function openModal() {
+  const n = Math.round((checkOut - checkIn) / 86400000);
+  document.getElementById('modal-info').innerHTML =
+    '🏠 ' + rooms[selRoom].name + '<br>📅 ' + fmtDate(checkIn) + ' – ' + fmtDate(checkOut) + '<br>🌙 ' + n + ' คืน';
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  document.getElementById('fc').style.display = 'block';
+  document.getElementById('succ').style.display = 'none';
+  document.getElementById('gname').value = '';
+  document.getElementById('gtel').value = '';
+  document.getElementById('gnote').value = '';
+}
+
+function confirmBook() {
+  const name = document.getElementById('gname').value.trim();
+  const tel = document.getElementById('gtel').value.trim();
+  if (!name || !tel) { alert('กรุณากรอกชื่อและเบอร์โทรศัพท์'); return; }
+  const n = Math.round((checkOut - checkIn) / 86400000);
+  document.getElementById('succ-detail').innerHTML =
+    rooms[selRoom].name + '<br>' + fmtDate(checkIn) + ' – ' + fmtDate(checkOut) +
+    ' · ' + n + ' คืน<br>ผู้จอง: ' + name + '<br>โทร: ' + tel;
+  document.getElementById('fc').style.display = 'none';
+  document.getElementById('succ').style.display = 'block';
+}
+
+renderRooms(); renderCal(); updateBar();
+</script>
+</body>
+</html>
